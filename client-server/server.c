@@ -61,18 +61,22 @@ static struct addrinfo *server_addrinfos(struct addrinfo *hints) {
   return servinfo;
 }
 
-int main(void)
-{
+static void allow_port_reuse (int sockfd) {
   int yes = 1;
-  int err;
 
-  struct addrinfo hints = init_hints();
+  int err = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+  if (err) {
+    perror("setsockopt");
+    exit(1);
+  }
+}
 
-  //
-  // 1. getaddrinfo
-  //
-  struct addrinfo *servinfo = server_addrinfos(&hints);
+struct bound_sockfd {
+  int sockfd;
+  struct addrinfo *bound_addr;
+};
 
+static struct bound_sockfd bind_socket_to_address(struct addrinfo *servinfo) {
   struct addrinfo *p;
   int sockfd;
   for (p = servinfo; p != NULL; p = p->ai_next) {
@@ -86,16 +90,12 @@ int main(void)
       continue;
     }
 
-    err = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-    if (err) {
-      perror("setsockopt");
-      exit(1);
-    }
+    allow_port_reuse(sockfd);
 
     //
     // 3. bind
     //
-    err = bind(sockfd, p->ai_addr, p->ai_addrlen);
+    int err = bind(sockfd, p->ai_addr, p->ai_addrlen);
     if (err) {
       close(sockfd);
       perror("server: bind");
@@ -105,21 +105,40 @@ int main(void)
     // if we were able to bind sockfd to one of the addresses resolved by getaddrinfo
     break;
   }
-  freeaddrinfo(servinfo);
+  return (struct bound_sockfd) { sockfd, p };
+}
 
-  if (p == NULL) {
-    fprintf(stderr, "server: failed to bind to any of the resolved addresses\n");
-    exit(2);
-  }
-
-  //
-  // 4. listen
-  //
-  err = listen(sockfd, BACKLOG);
+static void listen_on(int sockfd, int backlog) {
+  int err = listen(sockfd, backlog);
   if (err) {
     perror("listen");
     exit(1);
   }
+}
+
+int main(void)
+{
+  int yes = 1;
+  int err;
+
+  struct addrinfo hints = init_hints();
+
+  // 1. getaddrinfo
+  struct addrinfo *servinfo = server_addrinfos(&hints);
+
+  // 2. socket
+  // 3. bind
+  struct bound_sockfd sock = bind_socket_to_address(servinfo);
+
+  if (sock.bound_addr == NULL) {
+    fprintf(stderr, "server: failed to bind to any of the resolved addresses\n");
+    exit(2);
+  }
+
+  freeaddrinfo(servinfo);
+
+  // 4. listen
+  listen_on(sock.sockfd, BACKLOG);
 
   reap_dead_processes();
 
@@ -135,7 +154,7 @@ int main(void)
   int is_child_process;
   while(1) {
     sin_size = sizeof client_addr;
-    client_sock_fd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
+    client_sock_fd = accept(sock.sockfd, (struct sockaddr *)&client_addr, &sin_size);
 
     if (client_sock_fd == -1) {
       perror("accept");
@@ -148,7 +167,7 @@ int main(void)
 
     is_child_process = !fork();
     if (is_child_process) {
-      close(sockfd);
+      close(sock.sockfd);
       err = send(client_sock_fd, "Hello, world!\n", 14, 0);
       if (err) {
         perror("send");
