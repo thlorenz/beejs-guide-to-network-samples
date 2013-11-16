@@ -40,29 +40,38 @@ static void *get_in_addr(struct sockaddr *sa) {
     : (void *) &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int main(void)
-{
-
-  int yes = 1;
+static struct addrinfo init_hints() {
   struct addrinfo hints;
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_family   =  AF_UNSPEC;
   hints.ai_socktype =  SOCK_STREAM;
   hints.ai_flags    =  AI_PASSIVE;
+  return hints;
+}
 
-  int err;
-
-  //
-  // 1. getaddrinfo
-  //
+static struct addrinfo *server_addrinfos(struct addrinfo *hints) {
   struct addrinfo *servinfo;
 
-  err = getaddrinfo(NULL, PORT, &hints, &servinfo);
+  int err = getaddrinfo(NULL, PORT, hints, &servinfo);
   if (err) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
     exit(1);
   }
+  return servinfo;
+}
+
+int main(void)
+{
+  int yes = 1;
+  int err;
+
+  struct addrinfo hints = init_hints();
+
+  //
+  // 1. getaddrinfo
+  //
+  struct addrinfo *servinfo = server_addrinfos(&hints);
 
   struct addrinfo *p;
   int sockfd;
