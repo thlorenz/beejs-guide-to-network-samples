@@ -50,7 +50,7 @@ static struct addrinfo init_hints() {
   return hints;
 }
 
-static struct addrinfo *server_addrinfos(struct addrinfo *hints) {
+static struct addrinfo *server_addrinfo(struct addrinfo *hints) {
   struct addrinfo *servinfo;
 
   int err = getaddrinfo(NULL, PORT, hints, &servinfo);
@@ -81,9 +81,7 @@ static struct bound_sockfd bind_socket_to_address(struct addrinfo *servinfo) {
   int sockfd;
   for (p = servinfo; p != NULL; p = p->ai_next) {
 
-    //
-    // 2. socket
-    //
+    // socket
     sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
     if (sockfd == -1) {
       perror("server: socket");
@@ -92,9 +90,7 @@ static struct bound_sockfd bind_socket_to_address(struct addrinfo *servinfo) {
 
     allow_port_reuse(sockfd);
 
-    //
-    // 3. bind
-    //
+    // bind
     int err = bind(sockfd, p->ai_addr, p->ai_addrlen);
     if (err) {
       close(sockfd);
@@ -116,6 +112,40 @@ static void listen_on(int sockfd, int backlog) {
   }
 }
 
+static void accept_clients(int sockfd) {
+  struct sockaddr_storage client_addr;
+  socklen_t sin_size;
+  int client_sock_fd;
+  char client_in_addr_s[INET6_ADDRSTRLEN];
+  int is_child_process;
+
+  while(1) {
+    sin_size = sizeof client_addr;
+    client_sock_fd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
+
+    if (client_sock_fd == -1) {
+      perror("accept");
+      continue;
+    }
+
+    void *client_in_addr = get_in_addr((struct sockaddr *)&client_addr);
+
+    inet_ntop(client_addr.ss_family, client_in_addr, client_in_addr_s, sizeof client_in_addr_s);
+    printf("server: got connection from %s\n", client_in_addr_s);
+
+    is_child_process = !fork();
+    if (is_child_process) {
+      close(sockfd);
+      int err = send(client_sock_fd, "Hello, world!\n", 14, 0);
+      if (err)  perror("send");
+
+      close(client_sock_fd);
+      exit(0);
+    }
+    close(client_sock_fd);
+  }
+}
+
 int main(void)
 {
   int yes = 1;
@@ -124,7 +154,7 @@ int main(void)
   struct addrinfo hints = init_hints();
 
   // 1. getaddrinfo
-  struct addrinfo *servinfo = server_addrinfos(&hints);
+  struct addrinfo *servinfo = server_addrinfo(&hints);
 
   // 2. socket
   // 3. bind
@@ -144,39 +174,8 @@ int main(void)
 
   printf("server: waiting for connections on port %s ...\n", PORT);
 
-  //
   // 5. accept
-  //
-  struct sockaddr_storage client_addr;
-  socklen_t sin_size;
-  int client_sock_fd;
-  char client_in_addr_s[INET6_ADDRSTRLEN];
-  int is_child_process;
-  while(1) {
-    sin_size = sizeof client_addr;
-    client_sock_fd = accept(sock.sockfd, (struct sockaddr *)&client_addr, &sin_size);
-
-    if (client_sock_fd == -1) {
-      perror("accept");
-      continue;
-    }
-    void *client_in_addr = get_in_addr((struct sockaddr *)&client_addr);
-
-    inet_ntop(client_addr.ss_family, client_in_addr, client_in_addr_s, sizeof client_in_addr_s);
-    printf("server: got connection from %s\n", client_in_addr_s);
-
-    is_child_process = !fork();
-    if (is_child_process) {
-      close(sock.sockfd);
-      err = send(client_sock_fd, "Hello, world!\n", 14, 0);
-      if (err) {
-        perror("send");
-      }
-      close(client_sock_fd);
-      exit(0);
-    }
-    close(client_sock_fd);
-  }
+  accept_clients(sock.sockfd);
 
   return 0;
 }
