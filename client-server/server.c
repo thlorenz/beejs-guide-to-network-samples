@@ -148,9 +148,6 @@ static void accept_clients(int sockfd) {
 
 int main(void)
 {
-  int yes = 1;
-  int err;
-
   struct addrinfo hints = init_hints();
 
   // 1. getaddrinfo
