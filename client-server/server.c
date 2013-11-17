@@ -50,7 +50,7 @@ static struct addrinfo init_hints() {
   return hints;
 }
 
-static struct addrinfo *server_addrinfo(struct addrinfo *hints) {
+static struct addrinfo *resolve_dns(struct addrinfo *hints) {
   struct addrinfo *servinfo;
 
   int err = getaddrinfo(NULL, PORT, hints, &servinfo);
@@ -150,11 +150,8 @@ int main(void)
 {
   struct addrinfo hints = init_hints();
 
-  // 1. getaddrinfo
-  struct addrinfo *servinfo = server_addrinfo(&hints);
+  struct addrinfo *servinfo = resolve_dns(&hints);
 
-  // 2. socket
-  // 3. bind
   struct bound_sockfd sock = bind_socket_to_address(servinfo);
 
   if (sock.bound_addr == NULL) {
@@ -164,14 +161,12 @@ int main(void)
 
   freeaddrinfo(servinfo);
 
-  // 4. listen
   listen_on(sock.sockfd, BACKLOG);
 
   reap_dead_processes();
 
   printf("server: waiting for connections on port %s ...\n", PORT);
 
-  // 5. accept
   accept_clients(sock.sockfd);
 
   return 0;
