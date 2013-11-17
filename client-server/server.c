@@ -13,6 +13,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include "./lib/init_hints.h"
+
 #define PORT "3000"
 #define BACKLOG 10
 
@@ -38,16 +40,6 @@ static void *get_in_addr(struct sockaddr *sa) {
   return sa->sa_family == AF_INET
     ? (void *) &(((struct sockaddr_in*)sa)->sin_addr)
     : (void *) &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
-static struct addrinfo init_hints() {
-  struct addrinfo hints;
-
-  memset(&hints, 0, sizeof(hints));
-  hints.ai_family   =  AF_UNSPEC;
-  hints.ai_socktype =  SOCK_STREAM;
-  hints.ai_flags    =  AI_PASSIVE;
-  return hints;
 }
 
 static struct addrinfo *resolve_dns(struct addrinfo *hints) {
@@ -148,7 +140,7 @@ static void accept_clients(int sockfd) {
 
 int main(void)
 {
-  struct addrinfo hints = init_hints();
+  struct addrinfo hints = init_hints(SOCK_STREAM);
 
   struct addrinfo *servinfo = resolve_dns(&hints);
 
