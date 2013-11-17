@@ -1,1 +1,1 @@
-struct addrinfo init_hints(int);
+struct addrinfo init_hints(int, int);

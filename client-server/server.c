@@ -13,7 +13,10 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#include "./lib/types.h"
 #include "./lib/init_hints.h"
+#include "./lib/resolve_dns.h"
+#include "./lib/get_in_addr.h"
 
 #define PORT "3000"
 #define BACKLOG 10
@@ -36,23 +39,6 @@ static void reap_dead_processes() {
   }
 }
 
-static void *get_in_addr(struct sockaddr *sa) {
-  return sa->sa_family == AF_INET
-    ? (void *) &(((struct sockaddr_in*)sa)->sin_addr)
-    : (void *) &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
-
-static struct addrinfo *resolve_dns(struct addrinfo *hints) {
-  struct addrinfo *servinfo;
-
-  int err = getaddrinfo(NULL, PORT, hints, &servinfo);
-  if (err) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
-    exit(1);
-  }
-  return servinfo;
-}
-
 static void allow_port_reuse (int sockfd) {
   int yes = 1;
 
@@ -63,12 +49,7 @@ static void allow_port_reuse (int sockfd) {
   }
 }
 
-struct bound_sockfd {
-  int sockfd;
-  struct addrinfo *bound_addr;
-};
-
-static struct bound_sockfd bind_socket_to_address(struct addrinfo *servinfo) {
+static struct sock bind_socket_to_address(struct addrinfo *servinfo) {
   struct addrinfo *p;
   int sockfd;
   for (p = servinfo; p != NULL; p = p->ai_next) {
@@ -93,7 +74,7 @@ static struct bound_sockfd bind_socket_to_address(struct addrinfo *servinfo) {
     // if we were able to bind sockfd to one of the addresses resolved by getaddrinfo
     break;
   }
-  return (struct bound_sockfd) { sockfd, p };
+  return (struct sock) { sockfd, p };
 }
 
 static void listen_on(int sockfd, int backlog) {
@@ -128,7 +109,7 @@ static void accept_clients(int sockfd) {
     is_child_process = !fork();
     if (is_child_process) {
       close(sockfd);
-      int err = send(client_sock_fd, "Hello, world!\n", 14, 0);
+      int err = send(client_sock_fd, "Hello, world!", 14, 0);
       if (err)  perror("send");
 
       close(client_sock_fd);
@@ -138,28 +119,27 @@ static void accept_clients(int sockfd) {
   }
 }
 
-int main(void)
-{
-  struct addrinfo hints = init_hints(SOCK_STREAM);
+int main(void) {
+  struct addrinfo hints = init_hints(SOCK_STREAM, AI_PASSIVE);
 
-  struct addrinfo *servinfo = resolve_dns(&hints);
+  struct addrinfo *servinfo = resolve_dns(&hints, NULL, PORT);
 
-  struct bound_sockfd sock = bind_socket_to_address(servinfo);
+  struct sock sock = bind_socket_to_address(servinfo);
 
-  if (sock.bound_addr == NULL) {
+  if (sock.addr == NULL) {
     fprintf(stderr, "server: failed to bind to any of the resolved addresses\n");
     exit(2);
   }
 
   freeaddrinfo(servinfo);
 
-  listen_on(sock.sockfd, BACKLOG);
+  listen_on(sock.fd, BACKLOG);
 
   reap_dead_processes();
 
   printf("server: waiting for connections on port %s ...\n", PORT);
 
-  accept_clients(sock.sockfd);
+  accept_clients(sock.fd);
 
   return 0;
 }
