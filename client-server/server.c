@@ -109,8 +109,8 @@ static void accept_clients(int sockfd) {
     is_child_process = !fork();
     if (is_child_process) {
       close(sockfd);
-      int err = send(client_sock_fd, "Hello, world!", 14, 0);
-      if (err)  perror("send");
+      int sent = send(client_sock_fd, "Hello, world!", 14, 0);
+      if (sent < 0) perror("send");
 
       close(client_sock_fd);
       exit(0);
