@@ -21,7 +21,7 @@ $(CLIENT_EXECUTABLE): $(LIB_OBJECTS) $(CLIENT_OBJECTS)
 	$(CC) $^ -o $@
 
 clean:
-	rm -f server
+	rm -f $(SERVER_EXECUTABLE) $(CLIENT_EXECUTABLE) 
 	rm -f $(LIB_OBJECTS) $(SERVER_OBJECTS) $(CLIENT_OBJECTS)
 
 .c.o:
