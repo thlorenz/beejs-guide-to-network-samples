@@ -1,7 +1,7 @@
 CC=cc
 CFLAGS=-c -Wall -std=c99
 
-LIB=$(wildcard lib/*.c)
+LIB=$(wildcard ../lib/*.c)
 LIB_OBJECTS=$(LIB:.c=.o)
 
 SERVER=server.c

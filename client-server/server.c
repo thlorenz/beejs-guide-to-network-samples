@@ -13,10 +13,10 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "./lib/types.h"
-#include "./lib/init_hints.h"
-#include "./lib/resolve_dns.h"
-#include "./lib/get_in_addr.h"
+#include "../lib/types.h"
+#include "../lib/init_hints.h"
+#include "../lib/resolve_dns.h"
+#include "../lib/get_in_addr.h"
 
 #define PORT "3000"
 #define BACKLOG 10
