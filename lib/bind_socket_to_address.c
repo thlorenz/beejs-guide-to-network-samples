@@ -19,7 +19,7 @@ static void allow_port_reuse (int sockfd) {
   }
 }
 
-struct sock bind_socket_to_address(struct addrinfo* servinfo) {
+sock_t bind_socket_to_address(struct addrinfo* servinfo) {
   struct addrinfo *p;
   int sockfd;
 
@@ -45,5 +45,5 @@ struct sock bind_socket_to_address(struct addrinfo* servinfo) {
     // if we were able to bind sockfd to one of the addresses resolved by getaddrinfo
     break;
   }
-  return (struct sock) { sockfd, p };
+  return (sock_t) { sockfd, p };
 }

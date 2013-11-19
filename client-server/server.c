@@ -87,7 +87,7 @@ int main(void) {
 
   struct addrinfo *servinfo = resolve_dns(&hints, NULL, PORT);
 
-  struct sock sock = bind_socket_to_address(servinfo);
+  sock_t sock = bind_socket_to_address(servinfo);
 
   if (sock.addr == NULL) {
     fprintf(stderr, "server: failed to bind to any of the resolved addresses\n");

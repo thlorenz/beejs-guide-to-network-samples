@@ -18,7 +18,7 @@
 
 #define PORT "3000"
 
-static struct sock make_socket(struct addrinfo *servinfo) {
+static sock_t make_socket(struct addrinfo *servinfo) {
   struct addrinfo *p;
   int sockfd;
 
@@ -31,7 +31,7 @@ static struct sock make_socket(struct addrinfo *servinfo) {
     break;
   }
 
-  return (struct sock) { sockfd, p };
+  return (sock_t) { sockfd, p };
 }
 
 int main(int argc, const char *argv[])
@@ -55,7 +55,7 @@ int main(int argc, const char *argv[])
 
   struct addrinfo hints     =  init_hints(SOCK_DGRAM, 0);
   struct addrinfo *servinfo =  resolve_dns(&hints, host, PORT);
-  struct sock sock          =  make_socket(servinfo);
+  sock_t sock               =  make_socket(servinfo);
 
 
   if (sock.addr == NULL) {

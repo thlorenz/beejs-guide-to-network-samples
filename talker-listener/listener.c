@@ -19,7 +19,7 @@
 #define PORT "3000"
 #define MAXBUF 100
 
-void receive(struct sock sock) {
+void receive(sock_t sock) {
   struct sockaddr_storage client_addr;
   socklen_t addr_len = sizeof client_addr;
   char *buf[MAXBUF];
@@ -43,7 +43,7 @@ int main(void)
 {
   struct addrinfo hints     =  init_hints(SOCK_DGRAM, AI_PASSIVE);
   struct addrinfo *servinfo =  resolve_dns(&hints, NULL, PORT);
-  struct sock sock          =  bind_socket_to_address(servinfo);
+  sock_t sock          =  bind_socket_to_address(servinfo);
   freeaddrinfo(servinfo);
 
   if (sock.addr == NULL) {

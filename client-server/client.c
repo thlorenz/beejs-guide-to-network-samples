@@ -19,7 +19,7 @@
 #define PORT "3000"
 #define MAXDATA 100
 
-static struct sock connect_socket_to_address(struct addrinfo *servinfo) {
+static sock_t connect_socket_to_address(struct addrinfo *servinfo) {
   struct addrinfo *p;
   int sockfd;
   for (p = servinfo; p != NULL; p = p->ai_next) {
@@ -42,7 +42,7 @@ static struct sock connect_socket_to_address(struct addrinfo *servinfo) {
     // if we were able to connect sockfd to one of the addresses resolved by getaddrinfo
     break;
   }
-  return (struct sock) { sockfd, p };
+  return (sock_t) { sockfd, p };
 }
 
 int main(int argc, const char *argv[]) {
@@ -53,7 +53,7 @@ int main(int argc, const char *argv[]) {
 
   struct addrinfo *servinfo = resolve_dns(&hints, host, PORT);
 
-  struct sock sock = connect_socket_to_address(servinfo);
+  sock_t sock = connect_socket_to_address(servinfo);
 
   if (sock.addr == NULL) {
     fprintf(stderr, "client: failed to connect\n");
