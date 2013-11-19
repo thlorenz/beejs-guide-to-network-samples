@@ -43,7 +43,7 @@ int main(void)
 {
   struct addrinfo hints     =  init_hints(SOCK_DGRAM, AI_PASSIVE);
   struct addrinfo *servinfo =  resolve_dns(&hints, NULL, PORT);
-  sock_t sock          =  bind_socket_to_address(servinfo);
+  sock_t sock               =  bind_socket_to_address(servinfo);
   freeaddrinfo(servinfo);
 
   if (sock.addr == NULL) {

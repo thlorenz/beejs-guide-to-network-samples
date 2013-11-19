@@ -47,21 +47,19 @@ static sock_t connect_socket_to_address(struct addrinfo *servinfo) {
 
 int main(int argc, const char *argv[]) {
 
-  struct addrinfo hints = init_hints(SOCK_STREAM, 0);
-
   const char *host = argc == 2 ? argv[1] : "localhost";
 
-  struct addrinfo *servinfo = resolve_dns(&hints, host, PORT);
-
-  sock_t sock = connect_socket_to_address(servinfo);
+  struct addrinfo hints     =  init_hints(SOCK_STREAM, 0);
+  struct addrinfo *servinfo =  resolve_dns(&hints, host, PORT);
+  sock_t sock               =  connect_socket_to_address(servinfo);
 
   if (sock.addr == NULL) {
     fprintf(stderr, "client: failed to connect\n");
     exit(2);
   }
 
-  void *server_in_addr = get_in_addr((struct sockaddr *)&sock.addr);
   char server_in_addr_s[INET6_ADDRSTRLEN];
+  void *server_in_addr = get_in_addr((struct sockaddr *)&sock.addr);
   inet_ntop(sock.addr->ai_family, server_in_addr, server_in_addr_s, sizeof server_in_addr_s);
 
   printf("client: connecting to %s\n", server_in_addr_s);
