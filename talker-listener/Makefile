@@ -1,0 +1,30 @@
+CC=cc
+CFLAGS=-c -Wall -std=c99
+
+LIB=$(wildcard ../lib/*.c)
+LIB_OBJECTS=$(LIB:.c=.o)
+
+LISTENER=listener.c
+LISTENER_OBJECTS=$(LISTENER:.c=.o)
+LISTENER_EXECUTABLE=listener
+
+TALKER=talker.c
+TALKER_OBJECTS=$(TALKER:.c=.o)
+TALKER_EXECUTABLE=talker
+
+all: clean $(LISTENER_EXECUTABLE) $(TALKER_EXECUTABLE)
+
+$(LISTENER_EXECUTABLE): $(LIB_OBJECTS) $(LISTENER_OBJECTS)  
+	$(CC) $^ -o $@
+
+$(TALKER_EXECUTABLE): $(LIB_OBJECTS) $(TALKER_OBJECTS)  
+	$(CC) $^ -o $@
+
+clean:
+	rm -f $(LISTENER_EXECUTABLE) $(TALKER_EXECUTABLE) 
+	rm -f $(LIB_OBJECTS) $(LISTENER_OBJECTS) $(TALKER_OBJECTS)
+
+.c.o:
+	$(CC) $(CFLAGS) $< -o $@
+
+.PHONY: all clean
